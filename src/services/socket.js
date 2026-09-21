@@ -8,7 +8,7 @@ class SocketService {
     this.isOfflineMode = false;
     this.offlineRoom = null;
     this.listeners = new Map();
-    this.serverUrl = 'http://localhost:3001';
+    this.serverUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:3001';
   }
 
   connect() {
