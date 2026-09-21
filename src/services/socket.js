@@ -8,7 +8,14 @@ class SocketService {
     this.isOfflineMode = false;
     this.offlineRoom = null;
     this.listeners = new Map();
-    this.serverUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:3001';
+    const envUrl = import.meta.env.VITE_SERVER_URL;
+    if (envUrl) {
+      this.serverUrl = envUrl;
+    } else if (typeof window !== 'undefined' && window.location) {
+      this.serverUrl = window.location.origin;
+    } else {
+      this.serverUrl = 'http://localhost:3001';
+    }
   }
 
   connect() {
