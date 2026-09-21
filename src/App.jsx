@@ -5,6 +5,7 @@ import RaceTrack from './components/RaceTrack';
 import TypingInput from './components/TypingInput';
 import CountdownOverlay from './components/CountdownOverlay';
 import PodiumModal from './components/PodiumModal';
+import ChatBox from './components/ChatBox';
 import { TOTAL_MONSTERS } from './data/gameData';
 
 export default function App() {
@@ -14,6 +15,7 @@ export default function App() {
   const [monsters, setMonsters] = useState([]);
   const [gameState, setGameState] = useState('lobby'); // 'lobby' | 'countdown' | 'racing' | 'finished'
   const [countdownSecs, setCountdownSecs] = useState(3);
+  const [chatMessages, setChatMessages] = useState([]);
 
   // Active Player Typing State
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
@@ -98,6 +100,10 @@ export default function App() {
       setGameState('finished');
     });
 
+    const unsubChat = socketService.on('chat_message', (msg) => {
+      setChatMessages(prev => [...prev.slice(-49), msg]);
+    });
+
     const unsubError = socketService.on('error', (msg) => {
       alert(msg);
     });
@@ -110,6 +116,7 @@ export default function App() {
       unsubOpponent();
       unsubFinished();
       unsubEnded();
+      unsubChat();
       unsubError();
     };
   }, []);
@@ -308,6 +315,7 @@ export default function App() {
             onLeaveRoom={() => {
               socketService.leaveRoom();
               setRoom(null);
+              setChatMessages([]);
               setGameState('lobby');
             }}
           />
@@ -361,6 +369,15 @@ export default function App() {
             setRoom(null);
             setGameState('lobby');
           }}
+        />
+      )}
+
+      {/* Hero Real-Time Chat Drawer */}
+      {room && (
+        <ChatBox
+          messages={chatMessages}
+          onSendMessage={(text) => socketService.sendChatMessage(text)}
+          currentUserId={playerId}
         />
       )}
 

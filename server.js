@@ -260,6 +260,25 @@ io.on('connection', (socket) => {
     io.to(room.code).emit('room_updated', room);
   });
 
+  // Chat message
+  socket.on('send_chat_message', ({ text }) => {
+    const room = rooms.get(socket.roomId);
+    if (!room) return;
+    const player = room.players.find(p => p.id === socket.id);
+    if (!player || !text || !text.trim()) return;
+
+    const chatMsg = {
+      id: `msg_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      senderId: player.id,
+      senderName: player.name,
+      senderHeroId: player.heroId,
+      text: text.trim().substring(0, 120),
+      timestamp: Date.now()
+    };
+
+    io.to(room.code).emit('chat_message', chatMsg);
+  });
+
   // Disconnect
   socket.on('disconnect', () => {
     console.log(`[Socket] Disconnected: ${socket.id}`);

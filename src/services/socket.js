@@ -41,7 +41,7 @@ class SocketService {
       });
 
       // Pass-through server events
-      const events = ['room_updated', 'game_countdown', 'game_started', 'opponent_progress', 'player_finished', 'race_ended'];
+      const events = ['room_updated', 'game_countdown', 'game_started', 'opponent_progress', 'player_finished', 'race_ended', 'chat_message'];
       events.forEach(evt => {
         this.socket.on(evt, (data) => this.emit(evt, data));
       });
@@ -262,6 +262,47 @@ class SocketService {
         p.isReady = p.isHost;
       });
       this.emit('room_updated', { ...this.offlineRoom });
+    }
+  }
+
+  sendChatMessage(text) {
+    if (!text || !text.trim()) return;
+    if (this.isConnected && !this.isOfflineMode) {
+      this.socket.emit('send_chat_message', { text: text.trim() });
+    } else if (this.offlineRoom) {
+      const p = this.offlineRoom.players.find(x => x.id === 'local_player');
+      const msg = {
+        id: `msg_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+        senderId: 'local_player',
+        senderName: p?.name || 'You',
+        senderHeroId: p?.heroId || 'knight',
+        text: text.trim().substring(0, 120),
+        timestamp: Date.now()
+      };
+      this.emit('chat_message', msg);
+
+      // Bot occasional banter in solo mode!
+      const bots = this.offlineRoom.players.filter(x => x.isBot);
+      if (bots.length > 0 && Math.random() < 0.8) {
+        const bot = bots[Math.floor(Math.random() * bots.length)];
+        const botQuotes = [
+          'Good luck! May the swiftest hero win! ⚔️',
+          'I\'ve been practicing my typing speed! ⚡',
+          'Let\'s rescue the Queen! 👑',
+          'Race to the finish line! 🏁',
+          'Watch out for those dragons! 🐉'
+        ];
+        setTimeout(() => {
+          this.emit('chat_message', {
+            id: `msg_${Date.now()}_bot`,
+            senderId: bot.id,
+            senderName: bot.name,
+            senderHeroId: bot.heroId,
+            text: botQuotes[Math.floor(Math.random() * botQuotes.length)],
+            timestamp: Date.now()
+          });
+        }, 1000 + Math.random() * 1000);
+      }
     }
   }
 
